@@ -25,7 +25,7 @@ struct Toot {
     actor: String,
     cc: Vec<String>,
     id: String,
-    object: TootObject,
+    object: Option<TootObject>,
     published: String,
     to: Vec<String>,
     #[serde(rename = "type")]
