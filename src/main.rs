@@ -25,7 +25,7 @@ struct Toot {
     actor: String,
     cc: Vec<String>,
     id: String,
-    object: Option<TootObject>,
+    object: Value,
     published: String,
     to: Vec<String>,
     #[serde(rename = "type")]
@@ -64,14 +64,17 @@ fn main() {
         if file.header().path().unwrap() != PathBuf::from("outbox.json") { continue; }
 
         let mut ob: Outbox = serde_json::from_reader(file).unwrap();
-        ob.ordered_items.into_iter()
+        for toot in ob.ordered_items.into_iter()
         .filter(|toot| toot.t == "Create")
-        .filter(|toot| !toot.object.sensitive)
         .filter(|toot| 
             toot.cc.contains(&String::from("https://www.w3.org/ns/activitystreams#Public")) ||
             toot.to.contains(&String::from("https://www.w3.org/ns/activitystreams#Public")))
-        .map(|toot| {
-            println!("{}", toot.object.content);
-        }).last();
+        .filter_map(|toot| match serde_json::from_value::<TootObject>(toot.object) { 
+                        Ok(v) => Some(v),
+                        Err(_) => None,
+                    }) 
+        .filter(|toot| !toot.sensitive ) {
+            println!("{}", toot.content);
+        }
     }
 }
